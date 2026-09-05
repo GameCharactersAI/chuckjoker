@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INTERVAL — rides for the space between</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#05060a;
+    --ink-panel:#0b0f18;
+    --ink-panel-2:#10151f;
+    --line:rgba(150,170,200,0.14);
+    --fog:#5c6b80;
+    --paper:#dfe6ef;
+    --amber:#ffb15e;
+    --amber-dim:#7a5a34;
+    --cyan:#37e6ff;
+    --magenta:#ff3f8f;
+    --violet:#8a6bff;
+    --glow-cyan: 0 0 6px rgba(55,230,255,0.9), 0 0 22px rgba(55,230,255,0.5), 0 0 60px rgba(55,230,255,0.25);
+    --glow-magenta: 0 0 6px rgba(255,63,143,0.9), 0 0 22px rgba(255,63,143,0.45), 0 0 60px rgba(255,63,143,0.2);
+    --glow-amber: 0 0 6px rgba(255,177,94,0.8), 0 0 18px rgba(255,177,94,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* film grain / rain-soaked air texture */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    z-index:500;
+    pointer-events:none;
+    opacity:0.05;
+    mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  h1,h2,h3, .display{
+    font-family:'Rajdhani', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    margin:0;
+  }
+
+  .jp{ font-family:'Zen Kaku Gothic New', sans-serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  a{ color:inherit; }
+
+  ::selection{ background:var(--magenta); color:#05060a; }
+
+  /* ---------- ambient rain layer ---------- */
+  .rain{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:
+      repeating-linear-gradient(100deg,
+        rgba(255,255,255,0.035) 0px,
+        rgba(255,255,255,0.035) 1px,
+        transparent 1px,
+        transparent 9px);
+    animation: fall 0.35s linear infinite;
+    opacity:0.5;
+  }
+  @keyframes fall{
+    0%{ background-position-y:0; }
+    100%{ background-position-y:34px; }
+  }
+
+  /* ---------- nav ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 6vw;
+    background:linear-gradient(180deg, rgba(5,6,10,0.92), rgba(5,6,10,0.55) 80%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    display:flex; align-items:baseline; gap:10px;
+    font-size:22px; font-weight:700; letter-spacing:0.12em;
+  }
+  .brand .kanji{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:700; font-size:20px; color:var(--cyan); text-shadow:var(--glow-cyan);
+  }
+  nav{ display:flex; gap:34px; font-size:13px; letter-spacing:0.08em; text-transform:uppercase; }
+  nav a{ text-decoration:none; color:var(--fog); transition:color .25s ease; position:relative; }
+  nav a:hover{ color:var(--paper); }
+  nav a:focus-visible, a:focus-visible, button:focus-visible{
+    outline:2px solid var(--cyan); outline-offset:3px;
+  }
+  .nav-time{ color:var(--amber); text-shadow:var(--glow-amber); }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;
+    min-height:92vh;
+    display:flex; align-items:center;
+    padding:0 6vw;
+    background:
+      radial-gradient(ellipse 60% 50% at 80% 15%, rgba(255,63,143,0.12), transparent 60%),
+      radial-gradient(ellipse 55% 45% at 15% 85%, rgba(55,230,255,0.10), transparent 60%),
+      var(--ink);
+    overflow:hidden;
+  }
+
+  .skyline{
+    position:absolute; left:0; right:0; bottom:0; height:46%;
+    z-index:1;
+    opacity:0.9;
+  }
+  .skyline svg{ width:100%; height:100%; display:block; }
+
+  .hero-inner{ position:relative; z-index:3; max-width:1200px; margin:0 auto; width:100%; padding-top:40px;}
+
+  .eyebrow{
+    display:flex; align-items:center; gap:12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; letter-spacing:0.22em; text-transform:uppercase;
+    color:var(--fog); margin-bottom:26px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--magenta); box-shadow:var(--glow-magenta); animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  .ma-wrap{
+    position:relative;
+    display:inline-flex; align-items:flex-end; gap:26px;
+    flex-wrap:wrap;
+  }
+  .ma{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:700;
+    font-size:clamp(80px, 13vw, 190px);
+    line-height:0.85;
+    color:#dff8ff;
+    text-shadow:
+      0 0 8px rgba(55,230,255,0.85),
+      0 0 26px rgba(55,230,255,0.55),
+      0 0 70px rgba(55,230,255,0.3);
+    animation: flicker 7s linear infinite;
+  }
+  @keyframes flicker{
+    0%,3%,6%,7%,9%,100%{ opacity:1; }
+    4%{ opacity:0.35; }
+    6.5%{ opacity:0.7; }
+    8%{ opacity:0.15; }
+  }
+
+  h1.display{
+    font-size:clamp(46px, 7vw, 96px);
+    font-weight:700;
+    line-height:0.95;
+    color:var(--paper);
+  }
+  h1.display span{
+    color:transparent;
+    -webkit-text-stroke:1.5px var(--magenta);
+    text-shadow:var(--glow-magenta);
+  }
+
+  .hero-sub{
+    max-width:520px;
+    margin-top:26px;
+    font-size:17px;
+    line-height:1.65;
+    color:#aeb9c9;
+  }
+
+  .cta-row{ display:flex; gap:18px; margin-top:40px; flex-wrap:wrap; align-items:center; }
+
+  .btn{
+    font-family:'Rajdhani', sans-serif;
+    font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    font-size:15px;
+    padding:16px 30px;
+    border-radius:2px;
+    text-decoration:none;
+    display:inline-flex; align-items:center; gap:10px;
+    cursor:pointer; border:1px solid transparent;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn-primary{
+    background:var(--magenta); color:#0a0410;
+    box-shadow:0 0 0 1px rgba(255,63,143,0.5), var(--glow-magenta);
+  }
+  .btn-primary:hover{ box-shadow:0 0 0 1px rgba(255,63,143,0.8), 0 0 18px rgba(255,63,143,0.8), 0 0 60px rgba(255,63,143,0.4); }
+  .btn-ghost{
+    background:transparent; color:var(--paper);
+    border-color:var(--line);
+  }
+  .btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan); }
+
+  .hero-note{
+    margin-top:56px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; color:var(--fog); letter-spacing:0.05em;
+    max-width:420px;
+  }
+
+  /* ---------- section shell ---------- */
+  section{ padding:120px 6vw; position:relative; z-index:2; }
+  .section-head{ max-width:640px; margin-bottom:64px; }
+  .section-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--cyan); margin-bottom:14px; display:block;
+  }
+  .section-title{ font-size:clamp(30px,4vw,44px); color:var(--paper); }
+  .section-desc{ margin-top:16px; color:#a3adbd; font-size:16px; line-height:1.7; max-width:56ch;}
+
+  /* ---------- departure board ---------- */
+  .board-wrap{
+    background:var(--ink-panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+  }
+  .board-strip{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 26px;
+    background:var(--ink-panel-2);
+    border-bottom:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; color:var(--fog); letter-spacing:0.1em;
+  }
+  .board-strip .live{ color:var(--amber); text-shadow:var(--glow-amber); }
+
+  .board-row{
+    display:grid;
+    grid-template-columns: 110px 1fr 140px 180px;
+    gap:18px;
+    align-items:center;
+    padding:20px 26px;
+    border-bottom:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+  }
+  .board-row:last-child{ border-bottom:none; }
+  .board-row .time{ color:#7d889b; }
+  .board-row .line-name{ color:#c7d0dd; font-family:'Rajdhani', sans-serif; font-size:17px; letter-spacing:0.03em; text-transform:uppercase; font-weight:600; }
+  .board-row .status{ letter-spacing:0.08em; text-transform:uppercase; font-size:12px; }
+  .status-gone{ color:#5c4a3a; }
+  .status-gone::before{ content:"● "; color:#5c4a3a; }
+  .board-row .fare{ color:#5c6577; text-align:right; }
+
+  .board-row.active{
+    background:linear-gradient(90deg, rgba(55,230,255,0.07), transparent 70%);
+  }
+  .board-row.active .line-name{ color:var(--cyan); text-shadow:var(--glow-cyan); }
+  .board-row.active .status{ color:var(--cyan); text-shadow:var(--glow-cyan); }
+  .board-row.active .status::before{ content:"● "; color:var(--cyan); animation:pulse 1.6s ease-in-out infinite; }
+  .board-row.active .fare{ color:var(--cyan); text-align:right; }
+
+  /* ---------- log / how it works ---------- */
+  .log{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+  }
+  .log-item{
+    background:var(--ink);
+    padding:36px 30px;
+    position:relative;
+  }
+  .log-time{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--amber);
+    text-shadow:var(--glow-amber);
+    margin-bottom:18px;
+    display:block;
+  }
+  .log-item h3{ font-size:22px; color:var(--paper); margin-bottom:12px; }
+  .log-item p{ color:#9aa4b5; font-size:14.5px; line-height:1.65; margin:0; }
+
+  /* ---------- zones ---------- */
+  .zones{ display:flex; flex-wrap:wrap; gap:14px; }
+  .zone{
+    font-family:'Rajdhani', sans-serif;
+    font-weight:600;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    font-size:14px;
+    padding:11px 20px;
+    border:1px solid var(--line);
+    border-radius:2px;
+    color:#c7d0dd;
+    transition:all .25s ease;
+  }
+  .zone:nth-child(3n+1):hover{ border-color:var(--cyan); color:var(--cyan); box-shadow:var(--glow-cyan); }
+  .zone:nth-child(3n+2):hover{ border-color:var(--magenta); color:var(--magenta); box-shadow:var(--glow-magenta); }
+  .zone:nth-child(3n+3):hover{ border-color:var(--violet); color:var(--violet); box-shadow:0 0 6px rgba(138,107,255,0.7),0 0 22px rgba(138,107,255,0.4); }
+
+  /* ---------- quote ---------- */
+  .quote-section{
+    background:var(--ink-panel);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .quote{
+    max-width:760px; margin:0 auto;
+    font-family:'Rajdhani', sans-serif;
+    font-weight:600;
+    font-size:clamp(22px, 3vw, 32px);
+    line-height:1.5;
+    color:#dbe3ef;
+    text-align:center;
+  }
+  .quote span{ color:var(--magenta); }
+  .quote-attr{
+    text-align:center; margin-top:26px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; color:var(--fog); letter-spacing:0.1em; text-transform:uppercase;
+  }
+
+  /* ---------- final cta ---------- */
+  .final{
+    text-align:center;
+    padding-top:100px; padding-bottom:140px;
+  }
+  .final .ma-small{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:700;
+    font-size:52px;
+    color:var(--cyan);
+    text-shadow:var(--glow-cyan);
+    display:block;
+    margin-bottom:18px;
+  }
+  .final h2{ font-size:clamp(32px,5vw,54px); color:var(--paper); }
+  .final .cta-row{ justify-content:center; margin-top:36px; }
+
+  /* ---------- footer ---------- */
+  footer{
+    padding:50px 6vw 40px;
+    border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:24px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; color:var(--fog);
+  }
+  .foot-signs{ display:flex; gap:22px; flex-wrap:wrap; }
+  .foot-signs span{ letter-spacing:0.08em; }
+  .foot-signs span.on{ color:var(--amber); text-shadow:var(--glow-amber); }
+  .foot-right{ text-align:right; }
+
+  @media (max-width: 820px){
+    nav{ display:none; }
+    .board-row{ grid-template-columns: 70px 1fr 90px; }
+    .board-row .fare{ display:none; }
+    .log{ grid-template-columns:1fr; }
+    footer{ flex-direction:column; align-items:flex-start; }
+    .foot-right{ text-align:left; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="rain" aria-hidden="true"></div>
+
+<header>
+  <div class="brand"><span class="kanji">間</span>INTERVAL</div>
+  <nav>
+    <a href="#board">Last Train</a>
+    <a href="#how">How It Works</a>
+    <a href="#zones">Zones</a>
+    <a href="#" class="nav-time mono">03:47</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="skyline" aria-hidden="true">
+    <svg viewBox="0 0 1600 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="180" width="70" height="220" fill="#0a0e17"/>
+      <rect x="80" y="120" width="50" height="280" fill="#0a0e17"/>
+      <rect x="140" y="210" width="90" height="190" fill="#0c1119"/>
+      <rect x="240" y="90" width="46" height="310" fill="#0a0e17"/>
+      <rect x="300" y="160" width="120" height="240" fill="#0c1119"/>
+      <rect x="430" y="60" width="60" height="340" fill="#0a0e17"/>
+      <rect x="500" y="200" width="80" height="200" fill="#0c1119"/>
+      <rect x="590" y="140" width="40" height="260" fill="#0a0e17"/>
+      <rect x="640" y="40" width="70" height="360" fill="#0a0e17"/>
+      <rect x="720" y="190" width="100" height="210" fill="#0c1119"/>
+      <rect x="830" y="110" width="55" height="290" fill="#0a0e17"/>
+      <rect x="900" y="220" width="130" height="180" fill="#0c1119"/>
+      <rect x="1040" y="70" width="60" height="330" fill="#0a0e17"/>
+      <rect x="1110" y="170" width="90" height="230" fill="#0c1119"/>
+      <rect x="1210" y="30" width="50" height="370" fill="#0a0e17"/>
+      <rect x="1270" y="200" width="110" height="200" fill="#0c1119"/>
+      <rect x="1390" y="120" width="60" height="280" fill="#0a0e17"/>
+      <rect x="1460" y="180" width="140" height="220" fill="#0c1119"/>
+      <g opacity="0.9">
+        <rect x="90" y="150" width="5" height="18" fill="#37e6ff"/>
+        <rect x="255" y="130" width="5" height="14" fill="#ff3f8f"/>
+        <rect x="450" y="90" width="5" height="16" fill="#ffb15e"/>
+        <rect x="655" y="70" width="5" height="20" fill="#37e6ff"/>
+        <rect x="845" y="140" width="5" height="15" fill="#8a6bff"/>
+        <rect x="1055" y="100" width="5" height="18" fill="#ff3f8f"/>
+        <rect x="1225" y="60" width="5" height="20" fill="#37e6ff"/>
+        <rect x="1405" y="150" width="5" height="15" fill="#ffb15e"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero-inner">
+    <div class="eyebrow"><span class="dot"></span> NO MORE DEPARTURES TONIGHT · SECTOR 9</div>
+
+    <div class="ma-wrap">
+      <span class="ma">間</span>
+      <h1 class="display">The last<br>train left<br>without <span>you</span>.</h1>
+    </div>
+
+    <p class="hero-sub">間 — <em>ma</em>. The space between one thing and the next. Interval is a car for that space: the hour after the schedules end and before the city lets you go home.</p>
+
+    <div class="cta-row">
+      <a href="#board" class="btn btn-primary">Request a car →</a>
+      <a href="#how" class="btn btn-ghost">See how it works</a>
+    </div>
+
+    <p class="hero-note mono">NO SURGE AFTER MIDNIGHT · AVG WAIT 4 MIN · DRIVERS WHO ALSO MISSED THEIRS</p>
+  </div>
+</section>
+
+<section id="board">
+  <div class="section-head">
+    <span class="section-tag">// Departure Board — Live</span>
+    <h2 class="section-title">Everything else has stopped running.</h2>
+    <p class="section-desc">The board doesn't lie. Check what's left before you start walking.</p>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board-strip">
+      <span>PLATFORM STATUS</span>
+      <span class="live">● SECTOR 9 TERMINAL</span>
+    </div>
+    <div class="board-row">
+      <span class="time">01:12</span>
+      <span class="line-name">Kanjo Loop Line</span>
+      <span class="status status-gone">Departed</span>
+      <span class="fare">—</span>
+    </div>
+    <div class="board-row">
+      <span class="time">02:03</span>
+      <span class="line-name">Riverbelt Express</span>
+      <span class="status status-gone">Departed</span>
+      <span class="fare">—</span>
+    </div>
+    <div class="board-row">
+      <span class="time">02:41</span>
+      <span class="line-name">Nightbus 88</span>
+      <span class="status status-gone">Departed</span>
+      <span class="fare">—</span>
+    </div>
+    <div class="board-row active">
+      <span class="time">03:47</span>
+      <span class="line-name">Interval</span>
+      <span class="status">Ready now</span>
+      <span class="fare">¥1,140 est.</span>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="section-head">
+    <span class="section-tag">// Timeline</span>
+    <h2 class="section-title">What happens between here and home.</h2>
+  </div>
+
+  <div class="log">
+    <div class="log-item">
+      <span class="log-time mono">03:47 — NOW</span>
+      <h3>You open the app.</h3>
+      <p>Drop a pin under the awning you're standing in. We already know it's raining.</p>
+    </div>
+    <div class="log-item">
+      <span class="log-time mono">03:49</span>
+      <h3>A car finds you.</h3>
+      <p>Nearest driver, real name, real face, plate lit up on your screen before headlights round the corner.</p>
+    </div>
+    <div class="log-item">
+      <span class="log-time mono">04:22</span>
+      <h3>You're home.</h3>
+      <p>Fare locked in before pickup. No surge for existing between trains.</p>
+    </div>
+  </div>
+</section>
+
+<section id="zones">
+  <div class="section-head">
+    <span class="section-tag">// Coverage</span>
+    <h2 class="section-title">Running in every district worth staying out late in.</h2>
+  </div>
+  <div class="zones">
+    <span class="zone">Dogenzaka Underpass</span>
+    <span class="zone">Kabukicho Row</span>
+    <span class="zone">Riverbelt Docks</span>
+    <span class="zone">Old Nihonbashi</span>
+    <span class="zone">Sector 9 Terminal</span>
+    <span class="zone">Neon Ginza Strip</span>
+    <span class="zone">Ameyoko Underpass</span>
+    <span class="zone">Harbor 12</span>
+    <span class="zone">Shin-Okubo Alley</span>
+  </div>
+</section>
+
+<section class="quote-section">
+  <p class="quote">"I wasn't lost. I just needed <span>something to close the gap</span> the schedule left open."</p>
+  <p class="quote-attr">— A rider, somewhere over the Riverbelt, 04:03</p>
+</section>
+
+<section class="final">
+  <span class="ma-small">間</span>
+  <h2>Missed it? Good.<br>That's what we're for.</h2>
+  <div class="cta-row">
+    <a href="#board" class="btn btn-primary">Call a car now →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-signs">
+    <span class="on">OPEN 24H</span>
+    <span>NO SCHEDULE</span>
+    <span class="on">NO SURGE AFTER MIDNIGHT</span>
+    <span>CASH & CARD</span>
+  </div>
+  <div class="foot-right">
+    INTERVAL // NIGHT DIVISION<br>
+    35.6895°N, 139.6917°E — SECTOR 9
+  </div>
+</footer>
+
+</body>
+</html>
