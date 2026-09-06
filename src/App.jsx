@@ -30,11 +30,30 @@ function App() {
   return (
     <>
       <section id="center">
+        {
+          // menubar on top of the page with the title "Chuckjoker" and buttons homr and follow me on x
+        }
+        <div className="menubar">
+          <h1>Chuckjoker</h1>
+          <div className="menubar-buttons">
+            <a href="https://gamecharactersai.github.io/chuckjoker" target="_blank">
+              Home
+            </a>
+            <a href="https://x.com/GameCharacterAI" target="_blank">
+              Follow me on X
+            </a>
+          </div>
+        </div>
+        {
+          // Section for the Chuck Norris image and the joke button
+        }
         <div className="hero">
           <img src={cnuckNorris} className="base" width="434" height="612" alt="Chuck Norris" />
         </div>
         <div>
-          <h1>Get your random Chuck Norris joke to make your day!</h1>
+          <h1>
+            Get your random <span className="hero-highlight">Chuck Norris</span> joke to make your day!
+          </h1>
         </div>
         <div className="joke-container">
           <button type="button" onClick={getJoke} disabled={loading}>
@@ -55,6 +74,13 @@ function App() {
           <a href="https://x.com/GameCharacterAI" target="_blank">
             Follow me on X
           </a>
+        </div>
+      </section>
+      <section id="spacer"></section>
+      <section id="footer">
+        <div className="footer">
+          <p className="footer-status">ONLINE // RANDOM ACCESS</p>
+          <p className="footer-meta">Chuckjoker v. 1.0.1 © 2026 GameCharactersAI. All rights reserved.</p>
         </div>
       </section>
     </>
