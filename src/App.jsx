@@ -5,6 +5,8 @@ import './App.css'
 const API = 'https://api.chucknorris.io/jokes'
 const SITE_URL = 'https://gamecharactersai.github.io/chuckjoker'
 const COUNT_KEY = 'chuckjoker:count'
+const RECENT_KEY = 'chuckjoker:recent'
+const RECENT_LIMIT = 6
 
 const LOADING_LINES = [
   'Charging roundhouse...',
@@ -21,6 +23,28 @@ function readCount() {
   }
 }
 
+function readRecent() {
+  try {
+    const list = JSON.parse(localStorage.getItem(RECENT_KEY))
+    return Array.isArray(list) ? list.filter((item) => typeof item === 'string').slice(0, RECENT_LIMIT) : []
+  } catch {
+    return []
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // Storage unavailable, the value just won't persist
+  }
+}
+
+// Put `joke` at the front of `list`, dropping duplicates and anything past the limit
+function pushRecent(list, joke) {
+  return [joke, ...list.filter((item) => item !== joke)].slice(0, RECENT_LIMIT)
+}
+
 function App() {
   const [count, setCount] = useState(readCount)
   const [joke, setJoke] = useState('')
@@ -30,6 +54,7 @@ function App() {
   const [categories, setCategories] = useState([])
   const [category, setCategory] = useState('')
   const [copied, setCopied] = useState(false)
+  const [recent, setRecent] = useState(readRecent)
 
   useEffect(() => {
     fetch(`${API}/categories`)
@@ -38,13 +63,8 @@ function App() {
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(COUNT_KEY, String(count))
-    } catch {
-      // Storage unavailable, the counter just won't persist
-    }
-  }, [count])
+  useEffect(() => writeStorage(COUNT_KEY, String(count)), [count])
+  useEffect(() => writeStorage(RECENT_KEY, JSON.stringify(recent)), [recent])
 
   async function getJoke() {
     if (loading) return
@@ -61,6 +81,7 @@ function App() {
       }
 
       const data = await response.json()
+      if (joke && !error) setRecent((list) => pushRecent(list, joke))
       setJoke(data.value)
       setError(false)
       setCount((value) => value + 1)
@@ -93,6 +114,16 @@ function App() {
     } catch {
       // Clipboard blocked, nothing to do
     }
+  }
+
+  function recallJoke(item) {
+    setRecent((list) => {
+      const rest = list.filter((entry) => entry !== item)
+      return joke && !error ? pushRecent(rest, joke) : rest
+    })
+    setJoke(item)
+    setError(false)
+    setCopied(false)
   }
 
   const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(`${joke}\n\nvia Chuckjoker`)}&url=${encodeURIComponent(SITE_URL)}`
@@ -152,7 +183,7 @@ function App() {
 
             <div className={`joke-container${error ? ' is-error' : ''}`}>
               <div className="joke-header">
-                <span>{error ? 'ERR // TRANSMISSION FAILED' : `INCOMING // #${String(count).padStart(3, '0')}`}</span>
+                <span>{error ? 'ERR // TRANSMISSION FAILED' : joke ? `INCOMING // #${String(count).padStart(3, '0')}` : 'STANDBY // NO SIGNAL'}</span>
                 {hasJoke && (
                   <div className="joke-actions">
                     <button type="button" className="ghost" onClick={copyJoke}>
@@ -174,6 +205,30 @@ function App() {
             </p>
           </div>
         </main>
+
+        {recent.length > 0 && (
+          <section className="log" aria-labelledby="log-title">
+            <div className="log-header">
+              <h2 id="log-title">Recent transmissions</h2>
+              <button type="button" className="ghost" onClick={() => setRecent([])}>
+                Clear log
+              </button>
+            </div>
+            <ol className="log-list">
+              {recent.map((item, index) => (
+                <li key={item}>
+                  <button type="button" className="log-item" onClick={() => recallJoke(item)}>
+                    <span className="log-meta">
+                      <span>#{String(index + 1).padStart(2, '0')}</span>
+                      <span className="log-recall">Recall →</span>
+                    </span>
+                    <span className="log-text">{item}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
       </section>
 
       <footer id="footer">

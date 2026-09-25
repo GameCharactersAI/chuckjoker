@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Link preview card (Open Graph / X). Render to public/og-card.png with:
+    python3 -c "import base64,sys; s=open('design/og-card.svg').read(); print(s.replace('../src/assets/chucknorris.jpg', 'data:image/png;base64,'+base64.b64encode(open('src/assets/chucknorris.jpg','rb').read()).decode()))" \
+      | rsvg-convert -w 1200 -h 630 -o public/og-card.png
+  Needs Rajdhani Bold and IBM Plex Mono available to fontconfig.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" fill="none" stroke="#37e6ff" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <pattern id="scan" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(10)">
+      <rect width="1" height="10" fill="#ffffff" fill-opacity="0.025"/>
+    </pattern>
+    <radialGradient id="glowMagenta" cx="0.8" cy="0.1" r="0.6">
+      <stop offset="0" stop-color="#ff3f8f" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ff3f8f" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowCyan" cx="0.15" cy="0.9" r="0.6">
+      <stop offset="0" stop-color="#37e6ff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#37e6ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="photoFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.6" stop-color="#05060a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#05060a" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="neon" x="-20%" y="-50%" width="140%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softNeon" x="-20%" y="-50%" width="140%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="photoClip"><rect x="722" y="96" width="414" height="414"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#05060a"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glowMagenta)"/>
+  <rect width="1200" height="630" fill="url(#glowCyan)"/>
+  <rect width="1200" height="630" fill="url(#scan)"/>
+
+  <!-- Top bar -->
+  <text x="64" y="72" font-family="Rajdhani" font-weight="700" font-size="26" letter-spacing="3" fill="#dfe6ef">CHUCKJOKER</text>
+  <circle cx="878" cy="63" r="4" fill="#37e6ff" filter="url(#softNeon)"/>
+  <text x="1136" y="68" text-anchor="end" font-family="IBM Plex Mono" font-size="15" letter-spacing="1.5" fill="#ffb15e" filter="url(#softNeon)">ONLINE // RANDOM ACCESS</text>
+  <line x1="0" y1="104" x2="1200" y2="104" stroke="#96aac8" stroke-opacity="0.16"/>
+
+  <!-- Photo panel -->
+  <rect x="704" y="78" width="450" height="450" fill="#0b0f18" stroke="#96aac8" stroke-opacity="0.16"/>
+  <g clip-path="url(#photoClip)">
+    <image x="722" y="96" width="414" height="414" preserveAspectRatio="xMidYMid slice" xlink:href="../src/assets/chucknorris.jpg"/>
+    <rect x="722" y="96" width="414" height="414" fill="url(#photoFade)"/>
+  </g>
+  <g fill="none" stroke="#37e6ff" stroke-width="3" filter="url(#softNeon)">
+    <path d="M704 108V78H734"/>
+    <path d="M1154 498V528H1124"/>
+  </g>
+  <rect x="738" y="472" width="332" height="24" fill="#05060a" fill-opacity="0.8"/>
+  <text x="746" y="489" font-family="IBM Plex Mono" font-size="12" letter-spacing="1.2" fill="#37e6ff">SUBJECT: C. NORRIS // THREAT LEVEL: ∞</text>
+
+  <!-- Headline -->
+  <g font-family="Rajdhani" font-weight="700" font-size="92" letter-spacing="3">
+    <text x="60" y="222" fill="#dfe6ef">RANDOM</text>
+    <text x="60" y="310" fill="none" stroke="#ff3f8f" stroke-width="2.5" filter="url(#neon)">CHUCK NORRIS</text>
+    <text x="60" y="398" fill="#dfe6ef">JOKES</text>
+  </g>
+  <text x="64" y="442" font-family="IBM Plex Mono" font-size="18" fill="#718096">One roundhouse of humor, on demand.</text>
+
+  <!-- CTA -->
+  <g filter="url(#softNeon)">
+    <rect x="64" y="478" width="300" height="58" rx="2" fill="#ff3f8f"/>
+  </g>
+  <text x="214" y="516" text-anchor="middle" font-family="Rajdhani" font-weight="700" font-size="24" letter-spacing="2.5" fill="#0a0410">ENTERTAIN ME →</text>
+
+  <!-- Footer -->
+  <line x1="0" y1="574" x2="1200" y2="574" stroke="#96aac8" stroke-opacity="0.16"/>
+  <text x="64" y="606" font-family="IBM Plex Mono" font-size="15" letter-spacing="1.5" fill="#718096">GAMECHARACTERSAI.GITHUB.IO/CHUCKJOKER</text>
+  <text x="1136" y="606" text-anchor="end" font-family="IBM Plex Mono" font-size="15" letter-spacing="1.5" fill="#718096">@GAMECHARACTERAI</text>
+</svg>
