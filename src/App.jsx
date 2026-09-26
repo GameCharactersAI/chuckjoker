@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import cnuckNorris from './assets/chucknorris.webp'
 import './App.css'
 
@@ -6,6 +6,7 @@ const API = 'https://api.chucknorris.io/jokes'
 const SITE_URL = 'https://gamecharactersai.github.io/chuckjoker'
 const COUNT_KEY = 'chuckjoker:count'
 const RECENT_KEY = 'chuckjoker:recent'
+const REMEMBER_KEY = 'chuckjoker:remember'
 const RECENT_LIMIT = 6
 
 const LOADING_LINES = [
@@ -14,6 +15,15 @@ const LOADING_LINES = [
   'Chuck is deciding...',
   'Breaking the fourth wall...',
 ]
+
+// Nothing is stored on the device unless the visitor switches "Remember" on
+function readRemember() {
+  try {
+    return localStorage.getItem(REMEMBER_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 function readCount() {
   try {
@@ -40,13 +50,31 @@ function writeStorage(key, value) {
   }
 }
 
+function clearStorage() {
+  try {
+    localStorage.removeItem(REMEMBER_KEY)
+    localStorage.removeItem(COUNT_KEY)
+    localStorage.removeItem(RECENT_KEY)
+  } catch {
+    // Storage unavailable, so nothing was saved either
+  }
+}
+
+// Show the privacy dialog with keyboard focus on its "Got it" button
+function openDialog(dialog) {
+  if (!dialog || dialog.open) return
+  dialog.showModal()
+  dialog.querySelector('[data-autofocus]')?.focus()
+}
+
 // Put `joke` at the front of `list`, dropping duplicates and anything past the limit
 function pushRecent(list, joke) {
   return [joke, ...list.filter((item) => item !== joke)].slice(0, RECENT_LIMIT)
 }
 
 function App() {
-  const [count, setCount] = useState(readCount)
+  const [remember, setRemember] = useState(readRemember)
+  const [count, setCount] = useState(() => (remember ? readCount() : 0))
   const [joke, setJoke] = useState('')
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -54,7 +82,8 @@ function App() {
   const [categories, setCategories] = useState([])
   const [category, setCategory] = useState('')
   const [copied, setCopied] = useState(false)
-  const [recent, setRecent] = useState(readRecent)
+  const [recent, setRecent] = useState(() => (remember ? readRecent() : []))
+  const privacyRef = useRef(null)
 
   useEffect(() => {
     fetch(`${API}/categories`)
@@ -63,8 +92,25 @@ function App() {
       .catch(() => {})
   }, [])
 
-  useEffect(() => writeStorage(COUNT_KEY, String(count)), [count])
-  useEffect(() => writeStorage(RECENT_KEY, JSON.stringify(recent)), [recent])
+  useEffect(() => {
+    if (remember) {
+      writeStorage(REMEMBER_KEY, '1')
+      writeStorage(COUNT_KEY, String(count))
+      writeStorage(RECENT_KEY, JSON.stringify(recent))
+    } else {
+      clearStorage()
+    }
+  }, [remember, count, recent])
+
+  // Open the privacy note when the address ends in #privacy (on load, or when a link changes it)
+  useEffect(() => {
+    const openFromHash = () => {
+      if (window.location.hash === '#privacy') openDialog(privacyRef.current)
+    }
+    openFromHash()
+    window.addEventListener('hashchange', openFromHash)
+    return () => window.removeEventListener('hashchange', openFromHash)
+  }, [])
 
   async function getJoke() {
     if (loading) return
@@ -95,6 +141,7 @@ function App() {
 
   const onKeyDown = useEffectEvent((event) => {
     const tag = event.target.tagName
+    if (privacyRef.current?.open) return
     if (event.code !== 'Space' || tag === 'BUTTON' || tag === 'A' || tag === 'INPUT') return
     event.preventDefault()
     getJoke()
@@ -200,9 +247,20 @@ function App() {
               </p>
             </div>
 
-            <p className="stats">
-              Jokes served <strong>{String(count).padStart(3, '0')}</strong>
-            </p>
+            <div className="stats-row">
+              <p className="stats">
+                Jokes served <strong>{String(count).padStart(3, '0')}</strong>
+              </p>
+              <label className="remember">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                />
+                <span>Remember my jokes on this device</span>
+              </label>
+            </div>
           </div>
         </main>
 
@@ -239,9 +297,82 @@ function App() {
               Follow me on X
             </a>
           </div>
-          <p className="footer-meta">Chuckjoker v. 1.0.1 © 2026 GameCharactersAI. All rights reserved.</p>
+          <div className="footer-meta">
+            <button type="button" className="footer-link" onClick={() => openDialog(privacyRef.current)}>
+              Privacy
+            </button>
+            <p>Chuckjoker v. 1.1.0 © 2026 GameCharactersAI. All rights reserved.</p>
+          </div>
         </div>
       </footer>
+
+      <dialog
+        ref={privacyRef}
+        className="privacy"
+        aria-labelledby="privacy-title"
+        onClick={(event) => event.target === event.currentTarget && event.currentTarget.close()}
+      >
+        <div className="privacy-body">
+          <h2 id="privacy-title">Privacy</h2>
+          <p>
+            Chuckjoker has no cookies, analytics, ads or tracking. This site doesn't collect or keep any information
+            about you.
+          </p>
+
+          <h3>Saved on your device</h3>
+          <p>
+            Nothing is saved unless you switch on <em>Remember my jokes on this device</em>. When it's on, your joke
+            counter and your last {RECENT_LIMIT} jokes are kept in your browser's local storage so they're still
+            there next time. This data stays on your device and is never sent anywhere. Switching it off deletes it
+            straight away, and clearing your browsing data removes it too.
+          </p>
+
+          <h3>Other services</h3>
+          <ul>
+            <li>
+              <strong>Jokes</strong> are fetched by your browser from{' '}
+              <a href="https://api.chucknorris.io" target="_blank" rel="noopener noreferrer">
+                api.chucknorris.io
+              </a>
+              , which receives your IP address like any website you visit.
+            </li>
+            <li>
+              <strong>Hosting</strong> is provided by GitHub Pages. GitHub may log visitors' IP addresses for
+              security, as described in the{' '}
+              <a
+                href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub Privacy Statement
+              </a>
+              .
+            </li>
+            <li>
+              <strong>Fonts and images</strong> are served from this site. Nothing is loaded from Google or other
+              third parties.
+            </li>
+            <li>
+              <strong>X links</strong> only contact X if you click them.
+            </li>
+          </ul>
+
+          <h3>Questions</h3>
+          <p>
+            Message{' '}
+            <a href="https://x.com/GameCharacterAI" target="_blank" rel="noopener noreferrer">
+              @GameCharacterAI
+            </a>{' '}
+            on X.
+          </p>
+
+          <form method="dialog">
+            <button type="submit" data-autofocus>
+              Got it
+            </button>
+          </form>
+        </div>
+      </dialog>
     </>
   )
 }
